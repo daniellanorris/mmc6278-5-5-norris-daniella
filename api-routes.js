@@ -2,21 +2,48 @@ const router = require('express').Router()
 const { param } = require('express/lib/request')
 const req = require('express/lib/request')
 const db = require('./db')
+const app = express()
 
 router
   .route('/inventory')
-  .get('/inventory/:id', (req, res) => {
+
+app.get('/inventory', async (req, res) => {
     try{
-    const data = req.params.id
-    res.json(data)
-    console.log(data)
+    const [inventory] = await db.query(`SELECT * FROM INVENTORY`)
+    res.json(inventory)
     }
     catch(err) {
       console.log(err)
-      res.send(404).json(`there was an error obtaining your data`)
+      res.status(404).send(`there was an error obtaining your data: ` + err.message)
     }
-
   });
+
+  app.post('/inventory', async (req, res) => {
+    try {
+     const {
+       price, 
+       quantity, 
+       name, 
+       image,
+       description
+     } = req.body
+     if (!(
+       price &&
+       quantity &&
+       name &&
+       image && 
+       description 
+     ))
+      return res
+        .status(400)
+        .send('must include price, quantity, name, image, and description')
+      res.status(201).send('inventory added')
+    }
+    catch(err) {
+      res.status(500).send('error creating inventory: ' + err.message)
+    }
+  });
+    
   // TODO: Create a GET route that returns a list of everything in the inventory table
   // The response should look like:
   // [
@@ -31,14 +58,27 @@ router
   //   {...},
   //   {...}, etc
   // ]
-
+ 
   // TODO: Create a POST route that inserts inventory items
   // This route will accept price, quantity, name, image, and description as JSON
   // in the request body.
   // It should return a 204 status code
-
 router
   .route('/inventory/:id')
+  .get('/inventory/:id', (req,res) => {
+    try {
+      const data = req.params.id
+      res.json(data)
+      res.send(204).json(`successful`)
+
+    }
+    catch(err) {
+      console.log(error)
+      res.send(404).json(`there was an error fetching the data.`)
+    }
+
+  });
+
   // TODO: Write a GET route that returns a single item from the inventory
   // that matches the id from the route parameter
   // Should return 404 if no item is found

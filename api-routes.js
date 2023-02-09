@@ -2,12 +2,11 @@ const router = require('express').Router()
 const { param } = require('express/lib/request')
 const req = require('express/lib/request')
 const db = require('./db')
-const app = express()
 
 router
-  .route('/inventory')
+  .route('/api/inventory')
 
-app.get('/inventory', async (req, res) => {
+  .get(async (req, res) => {
     try{
     const [inventory] = await db.query(`SELECT * FROM INVENTORY`)
     res.json(inventory)
@@ -16,9 +15,9 @@ app.get('/inventory', async (req, res) => {
       console.log(err)
       res.status(404).send(`there was an error obtaining your data: ` + err.message)
     }
-  });
+  })
 
-  app.post('/inventory', async (req, res) => {
+  .post(async (req, res) => {
     try {
      const {
        price, 
@@ -64,20 +63,66 @@ app.get('/inventory', async (req, res) => {
   // in the request body.
   // It should return a 204 status code
 router
-  .route('/inventory/:id')
-  .get('/inventory/:id', (req,res) => {
+  .route('./api/inventory/:id')
+  .get(async (req,res) => {
     try {
-      const data = req.params.id
-      res.json(data)
-      res.send(204).json(`successful`)
+      const [inventoryId] = await db.query(`SELECT ? FROM INVENTORY`)
+      res.json(inventoryId)
+    if(!
+      (inventoryId
+        ))
+      return res.status(404).send(`no item found`)
+    }
+    catch(err) {
+      res.status(500).send(`there was an error fetching the data: ` + err.message)
+    }
+
+  })
+  .put(async (req, res) => {
+    try{
+    const {
+      price, 
+      quantity, 
+      name, 
+      description,
+      image
+    } = req.body
+    if (!(
+      price &&
+      quantity &&
+      name && 
+      description &&
+      image
+    ))
+    return res
+      .status(404)
+      .send(`no item was found`)
+    res.status(204).send(`inventory added`)
+  }
+  catch(err) {
+    console.log(500)
+  }
+  })
+
+  .delete(async (req,res) => {
+    try {
+      const [inventoryDelete] = await db.query(`DELETE ? FROM INVENTORY`)
+      res.json(inventoryDelete)
+      if(!(
+        inventoryDelete
+      )) 
+      return res
+        .status(404)
+        .send(`item not found`)
+      res.status(204).send(`item successfully deleted`)
+      
 
     }
     catch(err) {
-      console.log(error)
-      res.send(404).json(`there was an error fetching the data.`)
-    }
+      res.status(500).send(`there was an error deleting the data`)
 
-  });
+    }
+  })
 
   // TODO: Write a GET route that returns a single item from the inventory
   // that matches the id from the route parameter
@@ -126,6 +171,10 @@ router
   })
   .post(async (req, res) => {
     const {inventoryId, quantity} = req.body
+    const [joinItems] = await db.query(
+      `LEFT JOIN
+        `
+    )
     // Using a LEFT JOIN ensures that we always return an existing
     // inventory item row regardless of whether that item is in the cart.
     const [[item]] = await db.query(

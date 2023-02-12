@@ -1,6 +1,4 @@
 const router = require('express').Router()
-const { param } = require('express/lib/request')
-const req = require('express/lib/request')
 const db = require('./db')
 
 router

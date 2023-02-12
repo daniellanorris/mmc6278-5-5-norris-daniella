@@ -83,40 +83,31 @@ router
   .put(async (req, res) => {
     try {
       const {
-        id,
         name,
         image,
         description,
         price,
         quantity
       } = req.body
-      if (!(
-        id &&
-        name &&
-        image &&
-        description &&
-        price &&
-        quantity
-
-      ))
-        return res
-          .status(404)
-          .send(`no item was found`)
-      res.status(204).send(`inventory added`)
+      const [{affectedRows}] = await db.query(
+        `UPDATE inventory SET ? WHERE id = ?`,
+        [{name, image, description, price, quantity}, req.params.id]
+      )
+      if (affectedRows === 0) return res.status(404).send(`no user`)
+      else {res.status(204).send(`user updated`)}
     }
     catch (err) {
       console.log(error)
-      //res.status(500)
     }
   })
 
   .delete(async (req, res) => {
     try {
-      const [inventoryDelete] = await db.query(`DELETE ? FROM inventory`)
-      res.json(inventoryDelete)
-      if (!(
-        inventoryDelete
-      ))
+      const [{affectedRows}] = await db.query(
+        `DELETE FROM inventory WHERE id = ?`,
+      req.params.id
+      )
+      if (affectedRows === 0) 
         return res
           .status(404)
           .send(`item not found`)
@@ -174,7 +165,8 @@ router
     res.json({ cartItems, total: total || 0 })
   })
   .post(async (req, res) => {
-     // Using a LEFT JOIN ensures that we always return an existing
+    const {inventoryId, quantity} = req.body
+    // Using a LEFT JOIN ensures that we always return an existing
     // inventory item row regardless of whether that item is in the cart.
     const [[item]] = await db.query(
       `SELECT
@@ -189,7 +181,7 @@ router
       [inventoryId]
     )
     if (!item) return res.status(404).send('Item not found')
-    const { cartId, inventoryQuantity } = item
+    const {cartId, inventoryQuantity} = item
     if (quantity > inventoryQuantity)
       return res.status(409).send('Not enough inventory')
     if (cartId) {
